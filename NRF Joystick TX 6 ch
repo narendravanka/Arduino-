@@ -1,0 +1,100 @@
+  #include <SPI.h>
+  #include <nRF24L01.h>
+  #include <RF24.h>
+
+  RF24 radio( 9 , 10 ); // CE, CSN pins 
+
+struct Data {
+    int throttle;
+    int yaw;
+    int pitch;
+    int roll;
+    int aux; 
+    int pot;
+};
+Data txData;
+const uint64_t pipe = 0xE1;
+
+//int VRx = A0;
+//int VRy = A1;
+//int VLx = A2;
+//int VLy = A3;
+//int pot = A6;
+//int sw = 2;
+
+void setup() {
+  Serial.begin(9600); 
+  // NRF  Radio initiates
+    radio.begin();
+    radio.setAutoAck(false);
+    radio.openWritingPipe(pipe);
+    radio.setPALevel(RF24_PA_MAX);
+    radio.setDataRate(RF24_250KBPS);  
+    radio.stopListening();
+  pinMode(A0, INPUT);
+  pinMode(A1, INPUT);
+  pinMode(A2, INPUT);
+  pinMode(A3, INPUT);
+  // potentiometer
+  pinMode(A6, INPUT);
+  // joystick button
+  pinMode(2, INPUT_PULLUP); 
+  resetData();
+//  delay(1000);
+}
+
+void loop() {
+//  throttle = analogRead(VLx);
+//  yaw = analogRead(VRy);
+//  pitch = analogRead(VRx);
+//  roll = analogRead(VLy);
+//  SW_state = digitalRead(sw);
+//  high = analogRead(pot);
+
+  txData.throttle = mapJoystickValues( analogRead(A2) , 0, 511, 1023, true );
+  txData.yaw      = mapJoystickValues( analogRead(A1) , 0, 511, 1023, true );
+  txData.pitch    = mapJoystickValues( analogRead(A0) , 0, 511, 1023, true );
+  txData.roll     = mapJoystickValues( analogRead(A3) , 0, 511, 1023, true );
+  txData.pot     =  map( analogRead(A6) , 0,1023, 0, 254 ); //  Potentiometer
+  txData.aux     = digitalRead(2); // Left joystick button
+  radio.write( &txData, sizeof(Data));
+
+  Serial.print( " Throttle  :  " );
+  Serial.print( txData.throttle );
+    Serial.print("  Yaw  :   ");
+  Serial.print( txData.yaw );
+      Serial.print(" Pitch  :   ");
+  Serial.print( txData.pitch );
+      Serial.print("  Roll  :   ");
+  Serial.print( txData.roll );
+      Serial.print("   Button  :   ");
+  Serial.print( txData.aux );
+      Serial.print("  Pot  :   ");
+  Serial.print( txData.pot );
+      Serial.print("   :   ");
+  Serial.println(); 
+}
+
+void resetData() 
+{
+  
+  // Throttle  0  to stop the motors
+  // 127 is the middle value
+    
+  txData.throttle = 0;
+  txData.yaw = 127;
+  txData.pitch = 127;
+  txData.roll = 127;
+  txData.pot = 0;
+  txData.aux = 0;
+}
+
+int mapJoystickValues(int val, int lower, int middle, int upper, bool reverse)
+{
+  val = constrain(val, lower, upper);
+  if ( val < middle )
+    val = map(val, lower, middle, 0, 127);
+  else
+    val = map(val, middle, upper, 127, 254);
+  return ( reverse ? 255 - val : val );
+}
