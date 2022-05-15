@@ -30,7 +30,7 @@ void setup()
   radio.setAutoAck(false);
   radio.setDataRate(RF24_250KBPS);
   radio.openWritingPipe(my_radio_pipe);
-
+  
   //Reset each channel value
   sent_data.ch1 = 0;
   sent_data.ch2 = 127;
