@@ -21,7 +21,7 @@ struct Data_to_be_sent {
 
 //Create a variable with the structure above and name it sent_data
 Data_to_be_sent sent_data;
-
+  
 
 
 void setup()
